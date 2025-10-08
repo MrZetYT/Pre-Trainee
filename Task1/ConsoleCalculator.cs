@@ -4,120 +4,70 @@ namespace Task1
 {
     public class Calculator
     {
-        private static readonly char[] operationsArray = ['+', '-', '*', '/'];
-        public static bool IsCorrectInput(string input, ref int number)
+        private static readonly Dictionary<char, IOperation> Operations = new()
         {
-            try
-            {
-                number = int.Parse(input);
-            }
-            catch
-            {
-                Console.WriteLine("Неправильное число. Попробуйте ещё раз!");
-                return false;
-            }
-            return true;
-        }
-        public static bool IsCorrectInput(string input, ref char operation)
+            { '+', new AdditionOperation() },
+            { '-', new SubtractionOperation() },
+            { '*', new MultiplicationOperation() },
+            { '/', new DivisionOperation() }
+        };
+        static double ReadNumber(string message)
         {
-            try
-            {
-                operation = char.Parse(input);
-            }
-            catch
-            {
-                Console.WriteLine("Неправильная операция. Попробуйте ещё раз!");
-                return false;
-            }
-            return true;
-        }
-        public static bool IsCorrectInput(string input, ref byte choice)
-        {
-            try
-            {
-                choice = byte.Parse(input);
-            }
-            catch
-            {
-                Console.WriteLine("Неправильный ввод. Попробуйте ещё раз!");
-                return false;
-            }
-            return true;
-        }
-        static int ReadNumber(string message)
-        {
-            int number = 0;
             while (true)
             {
                 Console.Write(message);
-                if(IsCorrectInput(Console.ReadLine() ?? "", ref number)) return number;
+                if (double.TryParse(Console.ReadLine(), out double number))
+                    return number;
+
+                Console.WriteLine("Неверное число. Попробуйте ещё раз!");
             }
         }
         static char ReadOperation()
         {
-            char operation= ' ';
             while (true)
             {
                 Console.Write("1. Сложение - \"+\"\n" +
-                    "2. Вычитение - \"-\"\n" +
-                    "3. Умножение - \"*\"\n" +
-                    "4. Деление - \"/\"\n" +
-                    "Введите операцию: ");
-                if (!IsCorrectInput(Console.ReadLine() ?? "", ref operation)) continue;
-                if (!operationsArray.Contains(operation))
-                {
-                    Console.WriteLine("Неправильный символ операции. Попробуйте ещё раз!");
-                    continue;
-                }
-                return operation;
+                              "2. Вычитание - \"-\"\n" +
+                              "3. Умножение - \"*\"\n" +
+                              "4. Деление - \"/\"\n" +
+                              "Введите операцию: ");
+
+                if (char.TryParse(Console.ReadLine(), out char op) && Operations.ContainsKey(op))
+                    return op;
+
+                Console.WriteLine("Неверная операция. Попробуйте ещё раз!");
             }
-        }
-        static double Calculate(int firstNum, int secondNum, char op)
-        {
-            return op switch
-            {
-                '+' => firstNum + secondNum,
-                '-' => firstNum - secondNum,
-                '*' => firstNum * secondNum,
-                '/' => (double)firstNum / secondNum,
-                _ => throw new InvalidOperationException("Неправильная операция!")
-            };
         }
         public static void Main()
         {
-            int firstNumber, secondNumber;
+            double firstNumber, secondNumber, result;
             char operation;
-            byte userChoice = 0;
-            double result;
-            while (userChoice != 2)
+            byte choice = 0;
+
+            while (choice != 2)
             {
                 firstNumber = ReadNumber("Введите первое число: ");
-
                 operation = ReadOperation();
-
                 secondNumber = ReadNumber("Введите второе число: ");
 
-                if(secondNumber == 0 && operation == '/')
+                try
                 {
-                    Console.WriteLine("Деление на ноль невозможно!");
-                    continue;
+                    IOperation selectedOp = Operations[operation];
+                    result = selectedOp.Execute(firstNumber, secondNumber);
+                    Console.WriteLine($"Результат: {result}");
                 }
-
-                result = Calculate(firstNumber, secondNumber, operation);
-                Console.WriteLine("Результат: {0}", result);
+                catch (DivideByZeroException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
 
                 while (true)
                 {
-                    Console.Write("1. Продолжить\n" +
-                        "2. Выход\n" +
-                        "Выбор: ");
-                    if (!IsCorrectInput(Console.ReadLine() ?? "", ref userChoice))
-                        continue;
-
-                    if (userChoice == 1 || userChoice == 2)
+                    Console.Write("1. Продолжить\n2. Выход\nВыбор: ");
+                    if (byte.TryParse(Console.ReadLine(), out choice) && (choice == 1 || choice == 2))
                         break;
 
-                    Console.WriteLine("Неверный выбор! Введите 1 или 2");
+                    Console.WriteLine("Неверный выбор! Введите 1 или 2.");
                 }
             }
         }
